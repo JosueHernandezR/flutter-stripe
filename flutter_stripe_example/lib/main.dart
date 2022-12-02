@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter_stripe_example/screens/home/home_screen.dart';
+import 'package:flutter_stripe_example/screens/subscription/subscription_screen.dart';
 
 import '.env';
 
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomeScreen(),
+      home: const SubscriptionPage(),
     );
   }
 }

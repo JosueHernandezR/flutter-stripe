@@ -71,7 +71,7 @@ class _PaymentButtonState extends State<PaymentButton> {
     var response = await client.post(
       Uri.parse(url),
       headers: headers,
-      body: {'description': 'new customer'},
+      body: {'description': 'test@test.com'},
     );
     if (response.statusCode == 200) {
       debugPrint('CreateCustomer success: ${json.decode(response.body)}');
@@ -129,24 +129,29 @@ class _PaymentButtonState extends State<PaymentButton> {
     await Stripe.instance.presentPaymentSheet();
   }
 
-  Future<void> makePayment() async {
-    try {
-      paymentIntentData =
-          await createPaymentIntent(money, 'MXN'); //json.decode(response.body);
-      await Stripe.instance
-          .initPaymentSheet(
-            paymentSheetParameters: SetupPaymentSheetParameters(
-              paymentIntentClientSecret: paymentIntentData!['client_secret'],
-              style: ThemeMode.dark,
-              merchantDisplayName: 'ANNIE',
-            ),
-          )
-          .then((value) {});
-      displayPaymentSheet();
-    } catch (e, s) {
-      if (kDebugMode) {
-        print(s);
-      }
+  Future<Map<String, dynamic>> createPaymentMethod({
+    required String number,
+    required String expMonth,
+    required String expYear,
+    required String cvc,
+  }) async {
+    const String url = 'https://api.stripe.com/v1/payment_methods';
+    var response = await client.post(
+      Uri.parse(url),
+      headers: headers,
+      body: {
+        'type': 'card',
+        'card[number]': '$number',
+        'card[exp_month]': '$expMonth',
+        'card[exp_year]': '$expYear',
+        'card[cvc]': '$cvc',
+      },
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      debugPrint(json.decode(response.body));
+      throw 'Failed to create PaymentMethod.';
     }
   }
 
@@ -166,11 +171,33 @@ class _PaymentButtonState extends State<PaymentButton> {
     // }
   }
 
+  Future<void> makePayment() async {
+    try {
+      final customer = await _createCustomer();
+      debugPrint('Datos traidos de customer $customer');
+      paymentIntentData =
+          await createPaymentIntent(money, 'MXN'); //json.decode(response.body);
+      await Stripe.instance
+          .initPaymentSheet(
+            paymentSheetParameters: SetupPaymentSheetParameters(
+              paymentIntentClientSecret: paymentIntentData!['client_secret'],
+              style: ThemeMode.dark,
+              merchantDisplayName: 'ANNIE',
+            ),
+          )
+          .then((value) {});
+      displayPaymentSheet();
+    } catch (e, s) {
+      debugPrint('$e $s');
+    }
+  }
+
   displayPaymentSheet() async {
     try {
       await Stripe.instance.presentPaymentSheet().then((newValue) {
         payFee();
-
+        debugPrint(
+            'Funcionalidad de displayPaymentSheet: ${paymentIntentData.toString()}');
         paymentIntentData = null;
       }).onError((error, stackTrace) {
         debugPrint('Exception/DISPLAYPAYMENTSHEET==> $error $stackTrace');
