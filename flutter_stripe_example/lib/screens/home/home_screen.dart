@@ -65,26 +65,6 @@ class _PaymentButtonState extends State<PaymentButton> {
     );
   }
 
-  // Primer paso: Registrar el customer en Stripe
-  Future<Map<String, dynamic>> _createCustomer() async {
-    const String url = 'https://api.stripe.com/v1/customers';
-    var response = await client.post(
-      Uri.parse(url),
-      headers: headers,
-      body: {'description': 'test@test.com'},
-    );
-    if (response.statusCode == 200) {
-      debugPrint('CreateCustomer success: ${json.decode(response.body)}');
-
-      return json.decode(response.body);
-    } else {
-      debugPrint('CreateCustomer failed: ${json.decode(response.body)}');
-
-      throw 'Failed to register as a customer.';
-    }
-  }
-
-  // Segundo paso: Crear intento de pago, agregadon el monto y la moneda
   Future<Map<String, dynamic>> createPaymentIntent(
     String amount,
     String currency,
@@ -110,51 +90,6 @@ class _PaymentButtonState extends State<PaymentButton> {
     }
   }
 
-  // Tercer paso: Implementacion del formulario para llenar los campos de la
-  // tarjeta de credito o debito para el usuario
-
-  Future<void> createCreditCard(
-      String customerId, String paymentIntentClientSecret) async {
-    await Stripe.instance.initPaymentSheet(
-      paymentSheetParameters: SetupPaymentSheetParameters(
-        applePay: const PaymentSheetApplePay(merchantCountryCode: 'MEX'),
-        googlePay: const PaymentSheetGooglePay(merchantCountryCode: 'MEX'),
-        style: ThemeMode.dark,
-        merchantDisplayName: 'Flutter Stripe Store Demo',
-        customerId: customerId,
-        paymentIntentClientSecret: paymentIntentClientSecret,
-      ),
-    );
-
-    await Stripe.instance.presentPaymentSheet();
-  }
-
-  Future<Map<String, dynamic>> createPaymentMethod({
-    required String number,
-    required String expMonth,
-    required String expYear,
-    required String cvc,
-  }) async {
-    const String url = 'https://api.stripe.com/v1/payment_methods';
-    var response = await client.post(
-      Uri.parse(url),
-      headers: headers,
-      body: {
-        'type': 'card',
-        'card[number]': '$number',
-        'card[exp_month]': '$expMonth',
-        'card[exp_year]': '$expYear',
-        'card[cvc]': '$cvc',
-      },
-    );
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      debugPrint(json.decode(response.body));
-      throw 'Failed to create PaymentMethod.';
-    }
-  }
-
   payFee() {
     // try {
     //   if (kDebugMode) {
@@ -173,8 +108,6 @@ class _PaymentButtonState extends State<PaymentButton> {
 
   Future<void> makePayment() async {
     try {
-      final customer = await _createCustomer();
-      debugPrint('Datos traidos de customer $customer');
       paymentIntentData =
           await createPaymentIntent(money, 'MXN'); //json.decode(response.body);
       await Stripe.instance
@@ -182,7 +115,7 @@ class _PaymentButtonState extends State<PaymentButton> {
             paymentSheetParameters: SetupPaymentSheetParameters(
               paymentIntentClientSecret: paymentIntentData!['client_secret'],
               style: ThemeMode.dark,
-              merchantDisplayName: 'ANNIE',
+              merchantDisplayName: 'ADH',
             ),
           )
           .then((value) {});
